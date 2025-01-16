@@ -108,7 +108,10 @@ INTERVALS: Dict[str, str] = {
 # Add the new endpoint
 @app.get("/get_intervals")
 async def get_intervals():
-    return INTERVALS
+    try:
+        return INTERVALS
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.route('/get_historical_data')
 def get_historical_data():
@@ -145,3 +148,15 @@ def get_historical_data():
         return jsonify(formatted_data)
     except Exception as e:
         return jsonify({'error': str(e)}), 400 
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+# Add proper error handling for all endpoints
+@app.get("/get_top_coins")
+async def get_top_coins():
+    try:
+        return binance_stream.get_top_tickers()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) 
