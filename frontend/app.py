@@ -19,7 +19,6 @@ UPDATE_INTERVAL = 5
 def main():
     st.markdown("""
     <style>
-    /* Dark theme styles */
     .dataframe {
         font-size: 14px;
         background-color: #0E1117;
@@ -28,6 +27,9 @@ def main():
     .stApp {
         background-color: #0E1117;
         color: #FAFAFA;
+    }
+    [data-testid="stDataFrame"] div[style*="overflow"] {
+        height: calc(100vh - 250px) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -53,13 +55,12 @@ def main():
                 # Format the columns
                 display_df = pd.DataFrame()
                 display_df['Time'] = df['timestamp']
-                display_df['Symbol'] = df['symbol']
+                display_df['Symbol'] = df.apply(lambda x: f"{x['symbol']} ({x['name']})", axis=1)
                 display_df['Open'] = df['open'].apply(lambda x: f"{x:.2f}")
                 display_df['High'] = df['high'].apply(lambda x: f"{x:.2f}")
                 display_df['Low'] = df['low'].apply(lambda x: f"{x:.2f}")
                 display_df['Close'] = df['close'].apply(lambda x: f"{x:.2f}")
                 display_df['CHANGE'] = df['change'].apply(lambda x: f"{x:+.2f}%")
-                display_df['AMPLITUDE'] = df['amplitude'].apply(lambda x: f"{x:.2f}%")
                 display_df['MA(7)'] = df['ma7'].apply(lambda x: f"{x:.2f}")
                 display_df['MA(25)'] = df['ma25'].apply(lambda x: f"{x:.2f}")
                 display_df['MA(99)'] = df['ma99'].apply(lambda x: f"{x:.2f}")
@@ -69,10 +70,8 @@ def main():
                     try:
                         if '%' in str(val):
                             num = float(val.strip('%'))
-                        else:
-                            num = float(val)
-                        color = '#F6465D' if num < 0 else '#0ECB81' if num > 0 else ''
-                        return f'color: {color}'
+                            color = '#F6465D' if num < 0 else '#0ECB81' if num > 0 else ''
+                            return f'color: {color}'
                     except:
                         return ''
 
