@@ -1,7 +1,21 @@
 import asyncio
 import websockets
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from typing import Dict
+
+app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class BinanceDataStream:
     def __init__(self):
@@ -71,3 +85,63 @@ websocket_thread.start()
 @app.route('/get_top_coins')
 def get_top_coins():
     return jsonify(binance_stream.get_top_tickers()) 
+
+# Define intervals
+INTERVALS: Dict[str, str] = {
+    '1m': '1 minute',
+    '3m': '3 minutes',
+    '5m': '5 minutes',
+    '15m': '15 minutes',
+    '30m': '30 minutes',
+    '1h': '1 hour',
+    '2h': '2 hours',
+    '4h': '4 hours',
+    '6h': '6 hours',
+    '8h': '8 hours',
+    '12h': '12 hours',
+    '1d': '1 day',
+    '3d': '3 days',
+    '1w': '1 week',
+    '1M': '1 month'
+}
+
+# Add the new endpoint
+@app.get("/get_intervals")
+async def get_intervals():
+    return INTERVALS
+
+@app.route('/get_historical_data')
+def get_historical_data():
+    symbol = request.args.get('symbol', 'BTCUSDT')
+    interval = request.args.get('interval', '1h')
+    start_date = request.args.get('start_date')
+    
+    try:
+        # Convert start_date string to timestamp
+        start_ts = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp() * 1000)
+        
+        # Get data from Binance
+        klines = client.get_historical_klines(
+            symbol,
+            interval,
+            start_str=start_ts,
+            limit=1000  # Adjust limit as needed
+        )
+        
+        # Format the data
+        formatted_data = []
+        for k in klines:
+            formatted_data.append({
+                'timestamp': k[0],
+                'open': float(k[1]),
+                'high': float(k[2]),
+                'low': float(k[3]),
+                'close': float(k[4]),
+                'volume': float(k[5]),
+                'close_time': k[6],
+                'quote_volume': float(k[7])
+            })
+            
+        return jsonify(formatted_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400 
